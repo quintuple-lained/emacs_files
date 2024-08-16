@@ -1,3 +1,5 @@
+(load-theme 'base16-gruvbox-dark-soft t)
+
 ;; GUI deshittening
 (blink-cursor-mode 0)
 (scroll-bar-mode 0)
@@ -18,10 +20,6 @@
 (require 'org)
 (require 'base16-theme)
 (require 'ace-jump-mode)
-
-
-
-(load-theme 'base16-gruvbox-dark-soft t)
 
 (use-package rustic
   :ensure t
