@@ -36,6 +36,17 @@
 (define-key global-map (kbd "C-S-o") (kbd "C-p C-e RET"))  ;; same thing but new line is before the current one
 (define-key global-map (kbd "M-j") (kbd "C-u M-^"))  ;; append next line to current one, the default does the opposite
 
+(latex-preview-pane-enable)
+
+;; taken from: dfeichs emacs course and config
+(defvar autosave-dir
+  (concat "~/.emacs-autosaves/"))
+(make-directory autosave-dir t)
+(setq auto-save-filename-transforms `((".*" ,autosave-dir t)))
+
+(defvar backup-dir "~/.emacs-doc-backups/")
+(setq backup-directory-alist (list (cons ".*" backup-dir)))
+
 ;; custom commands
 (defun extend-selection (&optional firstp)
   (interactive)
@@ -120,20 +131,18 @@ The ansi-term buffer is named based on `name' "
 	("CNCL" . "olive drab")
 	("VOID" . "dim gray")))
 (custom-set-faces
- '(org-headline-done
-   ((((class color) (min-colors 16) (background dark))(:strike-through t)))))
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(org-headline-done ((((class color) (min-colors 16) (background dark)) (:strike-through t)))))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(lsp-mode rust-mode cargo-mode magit ace-jump-mode base16-theme nyan-mode ##)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+   '(latex-preview-pane lsp-mode rust-mode cargo-mode magit ace-jump-mode base16-theme nyan-mode ##)))
+
 
 (find-file "~/org/ideas.org")
