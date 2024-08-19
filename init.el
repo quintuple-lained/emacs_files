@@ -135,3 +135,5 @@ The ansi-term buffer is named based on `name' "
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+
+(find-file "~/org/ideas.org")
