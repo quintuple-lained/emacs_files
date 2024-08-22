@@ -1,5 +1,13 @@
-(load-theme 'base16-gruvbox-dark-soft t)
+(defun efs/display-startup-time ()
+  (message "Emacs loaded in %s with %d garbage collections."
+	   (format "%.2f seconds"
+		   (float-time
+		    (time-substract after-init-time before-init-time)))
+	   gcs-done))
 
+(load-theme 'base16-gruvbox-dark-soft t)
+(require 'use-package-ensure)
+(setq use-package-always-ensure t)
 ;; GUI deshittening
 (blink-cursor-mode 0)
 (scroll-bar-mode 0)
@@ -17,14 +25,60 @@
   (package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
 		      ("melpa" . "https://melpa.org/packages/"))))
 (package-refresh-contents)
-(require 'org)
-(require 'base16-theme)
-(require 'ace-jump-mode)
+
+(use-package org
+  :config
+  (add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
+  (setq org-todo-keywords
+	'((sequence "TODO" "PROG" "WAIT" "|"  "DONE" "CNCL" "VOID")))
+  (setq org-todo-keyword-faces
+      '(("TODO" . "red")
+	("PROG" . "magenta")
+	("WAIT" . "orange")
+	("DONE" . "green")
+	("CNCL" . "olive drab")
+	("VOID" . "dim gray")))
+  (setq org-image-actual-width nil)
+  (custom-set-faces
+  ;; custom-set-faces was added by Custom.
+  ;; If you edit it by hand, you could mess it up, so be careful.
+  ;; Your init file should contain only one such instance.
+  ;; If there is more than one, they won't work right.
+   '(org-headline-done ((((class color) (min-colors 16) (background dark)) (:strike-through t)))))
+  )
+
+(use-package base16-theme)
+
+(use-package ace-jump-mode
+  :bind ("C-<tab>" . ace-jump-mode)
+  )
+
+(use-package org-roam
+  :config
+  (setq org-roam-directory (file-truename "~/org-roam"))
+  (org-roam-db-autosync-mode)
+  )
+
+(use-package git-gutter
+  :hook (prog-mode . git-gutter-mode)
+  :config
+  (setq git-gutter:update-interval 0.02)
+  )
+
+(use-package git-gutter-fringe
+  :config
+  (define-fringe-bitmap 'git-gutter-fr:added [224] nil nil '(center repeated))
+  (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
+  (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom)
+  )
 
 (use-package rustic
   :ensure t
   :config
   (setq rustic-format-on-save nil)
+  :hook (
+	 (rust-mode-hook . cargo-minor-mode)
+	 (prog-mode-hook . display-line-numbers-mode))
   :custom
   (rustic-cargo-use-last-stored-arguments t))
 
@@ -85,7 +139,7 @@
 
 (define-key global-map (kbd "C-x 7") 'swap-buffers-with-next-window)
 
-(define-key global-map (kbd "C-<tab>") 'ace-jump-mode)
+
 
 ;; taken from https://gist.github.com/dfeich/1bcb09b0e2fc5f55fecec8f498862683
 (defun ssh-term (&optional path name)
@@ -115,34 +169,24 @@ The ansi-term buffer is named based on `name' "
       (process-send-string bufname (format (concat cd-str " exec bash;clear\n")
 					   path)))))
 
-(add-hook 'rust-mode-hook 'cargo-minor-mode)
-(add-hook 'prog-mode-hook 'display-line-numbers-mode)
+
 (setq-default explicit-shell-file-name "/bin/fish")
 
 ;; Org tuff
-(add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
-(setq org-todo-keywords
-      '((sequence "TODO" "PROG" "WAIT" "|"  "DONE" "CNCL" "VOID")))
-(setq org-todo-keyword-faces
-      '(("TODO" . "red")
-	("PROG" . "magenta")
-	("WAIT" . "orange")
-	("DONE" . "green")
-	("CNCL" . "olive drab")
-	("VOID" . "dim gray")))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(org-headline-done ((((class color) (min-colors 16) (background dark)) (:strike-through t)))))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(latex-preview-pane lsp-mode rust-mode cargo-mode magit ace-jump-mode base16-theme nyan-mode ##)))
+   '(git-gutter-fringe org-roam use-package-ensure-system-package latex-preview-pane lsp-mode rust-mode cargo-mode magit ace-jump-mode base16-theme nyan-mode ##)))
 
-
-(find-file "~/org/ideas.org")
+;; More annoying than useful
+;;(find-file "~/org/ideas.org")
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(org-headline-done ((((class color) (min-colors 16) (background dark)) (:strike-through t)))))
