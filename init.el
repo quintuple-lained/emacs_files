@@ -2,7 +2,7 @@
   (message "Emacs loaded in %s with %d garbage collections."
 	   (format "%.2f seconds"
 		   (float-time
-		    (time-substract after-init-time before-init-time)))
+		    (time-subtract after-init-time before-init-time)))
 	   gcs-done))
 
 (load-theme 'base16-gruvbox-dark-soft t)
@@ -24,7 +24,9 @@
   (package-native-compile t)
   (package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
 		      ("melpa" . "https://melpa.org/packages/"))))
-(package-refresh-contents)
+
+(unless package-archive-contents
+  (package-refresh-contents))
 
 (use-package org
   :config
@@ -190,3 +192,5 @@ The ansi-term buffer is named based on `name' "
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(org-headline-done ((((class color) (min-colors 16) (background dark)) (:strike-through t)))))
+
+(add-hook 'emacs-startup-hook #'efs/display-startup-time)
