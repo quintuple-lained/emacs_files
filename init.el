@@ -16,6 +16,47 @@
 (global-hl-line-mode 1)
 (nyan-mode 1)
 
+(defalias 'yes-or-no-p 'y-or-n-p)						 
+(setq initial-major-mode 'fundamental-mode)
+(setq auto-revert-interval 1)
+(setq auto-revert-check-vc-info t)
+(global-auto-revert-mode)
+(savehist-mode)
+;(windowmove-default-keybindings 'control)
+(setq sentence-end-double-space nil)
+(when (display-graphic-p)
+  (context-menu-mode))
+
+(add-hook 'after-init-hook 'help-quick)
+(setq enable-recursive-minibuffers t)                ; Use the minibuffer whilst in the minibuffer
+(setq completion-cycle-threshold 1)                  ; TAB cycles candidates
+(setq completions-detailed t)                        ; Show annotations
+(setq tab-always-indent 'complete)                   ; When I hit TAB, try to complete, otherwise, indent
+(setq completion-styles '(basic initials substring)) ; Different styles to match input to candidates
+
+(setq completion-auto-help 'always)                  ; Open completion always; `lazy' another option
+(setq completions-max-height 20)                     ; This is arbitrary
+(setq completions-detailed t)
+(setq completions-format 'one-column)
+(setq completions-group t)
+(setq completion-auto-select 'second-tab)
+(keymap-set minibuffer-mode-map "TAB" 'minibuffer-complete)
+(setq line-number-mode t)                        ; Show current line in modeline
+(setq column-number-mode t)                      ; Show column as well
+
+(setq x-underline-at-descent-line nil)           ; Prettier underlines
+(setq switch-to-buffer-obey-display-actions t)   ; Make switching buffers more consistent
+
+(setq-default show-trailing-whitespace t)
+(pixel-scroll-precision-mode)
+(add-hook 'text-mode-hook 'visual-line-mode)
+
+(use-package markdown-mode
+  :hook ((markdown-mode . visual-line-mode)))
+
+(use-package yaml-mode)
+
+(use-package json-mode)
 (use-package package
   :ensure nil
   :config
@@ -28,9 +69,26 @@
 (unless package-archive-contents
   (package-refresh-contents))
 
+(use-package vterm)
+
+(use-package smartparens
+  :bind (("<localleader>(" . sp-wrap-round)
+	 ("<localleader>{" . sp-wrap-curly)
+	 ("<localleader>[" . sp-wrap-square)
+	 ("<localleader>DEL" . sp-splice-sexp-killing-backward)))
+
+(setq save-interprogram-paste-before-kill t)
 (use-package org
+   :hook ((org-mode . visual-line-mode)  ; wrap lines at word breaks
+         (org-mode . flyspell-mode))    ; spell checking!
   :config
   (add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
+;  (use-package os-csl)
+  (add-to-list 'org-export-backends 'md)
+  (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file)
+
+  ;; Make exporting quotes better
+  (setq org-export-with-smart-quotes t)
   (setq org-todo-keywords
 	'((sequence "TODO" "PROG" "WAIT" "|"  "DONE" "CNCL" "VOID")))
   (setq org-todo-keyword-faces
@@ -41,6 +99,24 @@
 	("CNCL" . "olive drab")
 	("VOID" . "dim gray")))
   (setq org-image-actual-width nil)
+  (setq org-tag-alist '(
+                      ;; locale
+                      (:startgroup)
+                      ("home" . ?h)
+                      ("work" . ?w)
+                      ("school" . ?s)
+                      (:endgroup)
+                      (:newline)
+                      ;; scale
+                      (:startgroup)
+                      ("one-shot" . ?o)
+                      ("project" . ?j)sw
+                      ("tiny" . ?t)
+                      (:endgroup)
+                      ;; misc
+                      ("meta")
+                      ("review")
+                      ("reading")))
   (custom-set-faces
   ;; custom-set-faces was added by Custom.
   ;; If you edit it by hand, you could mess it up, so be careful.
@@ -103,6 +179,30 @@
 (defvar backup-dir "~/.emacs-doc-backups/")
 (setq backup-directory-alist (list (cons ".*" backup-dir)))
 
+(defun today-org (directory)
+  "Create an .org file in the specified DIRECTORY named with the current date in ISO format."
+  (interactive "DDirectory: ")
+  (let* ((current-date (format-time-string "%Y-%m-%d"))
+         (filename (concat current-date ".org"))
+         (filepath (expand-file-name filename directory)))
+    (if (file-exists-p filepath)
+        (message "File already exists: %s" filepath)
+      (write-region "" nil filepath)
+      (find-file filepath)
+      (message "Created file: %s" filepath))))
+
+(defun clear-kill-ring ()
+  "Clear the kill ring."
+  (interactive)
+  (setq kill-ring nil)
+  (message "Kill ring cleared."))
+
+(defun reload-emacs-conf ()
+  "Reload the emacs config"
+  (interactive)
+  (load-file "~/.emacs.d_exwm/init.el")
+  (message "Reloaded emacs config"))
+  
 ;; custom commands
 (defun extend-selection (&optional firstp)
   (interactive)
@@ -141,7 +241,33 @@
 
 (define-key global-map (kbd "C-x 7") 'swap-buffers-with-next-window)
 
+;;Taken from https://www.emacswiki.org/emacs/ToggleWindowSplit
+(defun toggle-window-split ()
+  (interactive)
+  (if (= (count-windows) 2)
+      (let* ((this-win-buffer (window-buffer))
+         (next-win-buffer (window-buffer (next-window)))
+         (this-win-edges (window-edges (selected-window)))
+         (next-win-edges (window-edges (next-window)))
+         (this-win-2nd (not (and (<= (car this-win-edges)
+                     (car next-win-edges))
+                     (<= (cadr this-win-edges)
+                     (cadr next-win-edges)))))
+         (splitter
+          (if (= (car this-win-edges)
+             (car (window-edges (next-window))))
+          'split-window-horizontally
+        'split-window-vertically)))
+    (delete-other-windows)
+    (let ((first-win (selected-window)))
+      (funcall splitter)
+      (if this-win-2nd (other-window 1))
+      (set-window-buffer (selected-window) this-win-buffer)
+      (set-window-buffer (next-window) next-win-buffer)
+      (select-window first-win)
+      (if this-win-2nd (other-window 1))))))
 
+(global-set-key (kbd "C-x |") 'toggle-window-split)
 
 ;; taken from https://gist.github.com/dfeich/1bcb09b0e2fc5f55fecec8f498862683
 (defun ssh-term (&optional path name)
@@ -153,24 +279,25 @@ The ansi-term buffer is named based on `name' "
   (unless name (setq name "ansi-term"))
   (ansi-term "/bin/bash" name)
   (let ((path (replace-regexp-in-string "^file:" "" path))
-	(cd-str
-	 "fn=%s; if test ! -d $fn; then fn=$(dirname $fn); fi; cd $fn;")
-	(bufname (concat "*" name "*" )))
+        (cd-str
+         "fn=%s; if test ! -d $fn; then fn=$(dirname $fn); fi; cd $fn;")
+        (bufname (concat "*" name "*" )))
     (if (tramp-tramp-file-p path)
-	(let ((tstruct (tramp-dissect-file-name path)))
-	  (cond
-	   ((equal (tramp-file-name-method tstruct) "ssh")
-	    (process-send-string bufname (format
-					  (concat  "ssh -t %s '"
-						   cd-str
-						   "exec bash'; exec bash; clear\n")
-					  (tramp-file-name-host tstruct)
-					  (tramp-file-name-localname tstruct))))
-	   (t (error "not implemented for method %s"
-		     (tramp-file-name-method tstruct)))))
+        (let ((tstruct (tramp-dissect-file-name path)))
+          (cond
+           ((equal (tramp-file-name-method tstruct) "ssh")
+            (let ((user (tramp-file-name-user tstruct))
+                  (host (tramp-file-name-host tstruct))
+                  (localname (tramp-file-name-localname tstruct)))
+              (process-send-string bufname (format
+                                            (concat  "ssh -t %s@%s '"
+                                                     cd-str
+                                                     "exec bash'; exec bash; clear\n")
+                                            user host localname))))
+           (t (error "not implemented for method %s"
+                     (tramp-file-name-method tstruct)))))
       (process-send-string bufname (format (concat cd-str " exec bash;clear\n")
-					   path)))))
-
+                                           path)))))
 
 (setq-default explicit-shell-file-name "/bin/fish")
 
@@ -182,7 +309,7 @@ The ansi-term buffer is named based on `name' "
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(git-gutter-fringe org-roam use-package-ensure-system-package latex-preview-pane lsp-mode rust-mode cargo-mode magit ace-jump-mode base16-theme nyan-mode ##)))
+   '(os-csl smartparens elgot json-mode yaml-mode fancy-battery symon vterm git-gutter-fringe org-roam use-package-ensure-system-package latex-preview-pane lsp-mode rust-mode cargo-mode magit ace-jump-mode base16-theme nyan-mode ##)))
 
 ;; More annoying than useful
 ;;(find-file "~/org/ideas.org")
